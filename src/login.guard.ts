@@ -1,3 +1,4 @@
+// 路由鉴权
 import {
     CanActivate,
     ExecutionContext,
@@ -18,6 +19,8 @@ interface JwtUserData {
     permissions: Permission[];
 }
 
+// 给Request这个class新增类型user
+// typescript 里同名 module 和 interface 会自动合并，可以这样扩展类型
 declare module 'express' {
     interface Request {
         user: JwtUserData;
@@ -37,6 +40,7 @@ export class LoginGuard implements CanActivate {
     ): boolean | Promise<boolean> | Observable<boolean> {
         const request: Request = context.switchToHttp().getRequest();
 
+        // 取出自定义装饰器的metadata信息
         const requireLogin = this.reflector.getAllAndOverride('require-login', [
             context.getClass(),
             context.getHandler(),
@@ -56,6 +60,7 @@ export class LoginGuard implements CanActivate {
             const token = authorization.split(' ')[1];
             const data = this.jwtService.verify<JwtUserData>(token);
 
+            // 在后续的请求处理中能够方便地访问到用户的信息。
             request.user = {
                 userId: data.userId,
                 username: data.username,
