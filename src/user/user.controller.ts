@@ -12,6 +12,7 @@ import {
     ParseIntPipe,
     BadRequestException,
     DefaultValuePipe,
+    HttpStatus,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { RegisterUserDto } from './dto/register-user.dto';
@@ -25,7 +26,16 @@ import { ConfigService } from '@nestjs/config';
 import { RequireLogin, UserInfo } from '../custom.decorator';
 import { UserDetailVo } from './vo/user-info.vo';
 import { generateParseIntPipe } from '../utils/parse';
+import {
+    ApiBearerAuth,
+    ApiBody,
+    ApiProperty,
+    ApiQuery,
+    ApiResponse,
+    ApiTags,
+} from '@nestjs/swagger';
 
+@ApiTags('用户管理模块')
 @Controller('user')
 export class UserController {
     constructor(private readonly userService: UserService) {}
@@ -48,6 +58,17 @@ export class UserController {
         return 'done';
     }
 
+    @ApiBody({ type: RegisterUserDto })
+    @ApiResponse({
+        status: HttpStatus.BAD_REQUEST,
+        description: '验证码已失效/验证码不正确/用户已存在',
+        type: String,
+    })
+    @ApiResponse({
+        status: HttpStatus.OK,
+        description: '注册成功/失败',
+        type: String,
+    })
     @Post('register')
     // 将请求体注入到register方法的参数register中，等价于 @Req() request ===> request.body
     async register(@Body() registerUser: RegisterUserDto) {
@@ -55,6 +76,18 @@ export class UserController {
         return await this.userService.register(registerUser);
     }
 
+    @ApiQuery({
+        name: 'address',
+        type: String,
+        description: '邮箱地址',
+        required: true,
+        example: 'xxx@xx.com',
+    })
+    @ApiResponse({
+        status: HttpStatus.OK,
+        description: '发送成功',
+        type: String,
+    })
     @Get('register-captcha')
     async captcha(@Query('address') address: string) {
         const code = Math.random().toString().slice(2, 8);
